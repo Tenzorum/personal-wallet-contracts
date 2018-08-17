@@ -1,18 +1,19 @@
 pragma solidity ^0.4.24;
 
 import "./ERC20.sol";
-import "./Ownable.sol";
 
 /**
- * Tenzorum Project https://tenzorum.org
- * Autor: Radek Ostrowski https://startonchain.com
+ * @title Personal Wallet - Tenzorum Project https://tenzorum.org
+ * @author Radek Ostrowski https://startonchain.com
  */
-contract PersonalWallet is Ownable {
+contract PersonalWallet {
 
+  enum Role {Unauthorised, Master, Action, Recovery}
+  mapping(address => Role) public roles;
   mapping(address => uint) public nonces;
 
-  constructor() public {
-    owner = msg.sender;
+  constructor(address masterAccount) public {
+    roles[masterAccount] = Role.Master;
   }
 
   function () payable public { }
@@ -23,6 +24,8 @@ contract PersonalWallet is Ownable {
     address _from, address _to, 
     uint _value, bytes _data, 
     address _rewardType, uint _rewardAmount) public {
+
+      onlyMaster(_from);
 
       bytes32 hash = keccak256(abi.encodePacked(address(this), _from, _to, _value, _data, 
         _rewardType, _rewardAmount, nonces[_from]++));
@@ -43,6 +46,10 @@ contract PersonalWallet is Ownable {
     
       //execute the transaction
       require(_to.call.value(_value)(_data));
+  }
+
+  function onlyMaster(address account) internal {
+    require(roles[account] == Role.Master);
   }
 
 }

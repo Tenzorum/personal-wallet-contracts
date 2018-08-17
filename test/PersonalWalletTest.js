@@ -3,7 +3,7 @@ var utils = require('web3-utils');
 
 let wallet;
 let owner;
-let device1;
+let master1;
 let device2;
 
 let oneEther = web3.toWei(1, "ether");
@@ -17,10 +17,10 @@ contract('PersonalWalletTest', (accounts) => {
 
     beforeEach(async () => {
         owner = accounts[0];
-        device1 = accounts[1];
+        master1 = accounts[1];
         device2 = accounts[2];
 
-        wallet = await PersonalWallet.new();
+        wallet = await PersonalWallet.new(master1);
         //make sure wallet contract has some ether first
         await web3.eth.sendTransaction({
             from: owner,
@@ -52,15 +52,23 @@ contract('PersonalWalletTest', (accounts) => {
     }
 
     it("send some ether using signing, with zero fee", async () => {
-        assert(oneEther == await web3.eth.getBalance(wallet.address), "contract has ether");
-        await signAndExecute(device1, device2, halfEther, '0x', etherRewardAddress, 0);
+        await signAndExecute(master1, device2, halfEther, '0x', etherRewardAddress, 0);
         assert(halfEther == await web3.eth.getBalance(wallet.address), "contract has send some ether");
     });
 
     it("send some ether using signing, take some ether as fee", async () => {
-        assert(oneEther == await web3.eth.getBalance(wallet.address), "contract has ether");
-        await signAndExecute(device1, device2, halfEther, '0x', etherRewardAddress, tenthOfEther);
+        await signAndExecute(master1, device2, halfEther, '0x', etherRewardAddress, tenthOfEther);
         assert(fourTenthOfEther == await web3.eth.getBalance(wallet.address), "contract has send some ether");
+    });
+
+    it("non-master cannot send ether using signing", async () => {
+        try {
+            await signAndExecute(device2, device2, halfEther, '0x', etherRewardAddress, 0);
+            assert(false);
+        } catch (e) {
+            expectRevert(e, "unauthorised account cannot make transfers");
+        }
+        assert(oneEther == await web3.eth.getBalance(wallet.address), "contract has send some ether");
     });
 
 })
