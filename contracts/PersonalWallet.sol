@@ -5,6 +5,11 @@ import "./ERC20.sol";
 /**
  * @title Personal Wallet - Tenzorum Project https://tenzorum.org
  * @author Radek Ostrowski https://startonchain.com
+ *
+ * Inspired by:
+ * IDEX: https://etherscan.io/address/0x2a0c0dbecc7e4d658f48e01e3fa353f44050c208#code
+ * ERC-1077&1078: https://ethereum-magicians.org/t/erc-1077-and-erc-1078-the-magic-of-executable-signed-messages-to-login-and-do-actions/351 
+ * BTTS: https://github.com/bokkypoobah/BokkyPooBahsTokenTeleportationServiceSmartContract
  */
 contract PersonalWallet {
 
@@ -25,7 +30,7 @@ contract PersonalWallet {
     uint _value, bytes _data, 
     address _rewardType, uint _rewardAmount) public {
 
-      onlyMaster(_from);
+      require(isMasterAccount(_from));
 
       bytes32 hash = keccak256(abi.encodePacked(address(this), _from, _to, _value, _data, 
         _rewardType, _rewardAmount, nonces[_from]++));
@@ -48,8 +53,8 @@ contract PersonalWallet {
       require(_to.call.value(_value)(_data));
   }
 
-  function onlyMaster(address account) internal {
-    require(roles[account] == Role.Master);
+  function isMasterAccount(address account) internal view returns (bool) {
+    return roles[account] == Role.Master;
   }
 
 }
