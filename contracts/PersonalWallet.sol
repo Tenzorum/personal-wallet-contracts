@@ -8,10 +8,15 @@ import "./ERC20.sol";
  *
  * Inspired by:
  * IDEX: https://etherscan.io/address/0x2a0c0dbecc7e4d658f48e01e3fa353f44050c208#code
- * ERC-1077&1078: https://ethereum-magicians.org/t/erc-1077-and-erc-1078-the-magic-of-executable-signed-messages-to-login-and-do-actions/351 
+ * ERC-1077&1078: https://ethereum-magicians.org/t/erc-1077-and-erc-1078-the-magic-of-executable-signed-messages-to-login-and-do-actions/351
  * BTTS: https://github.com/bokkypoobah/BokkyPooBahsTokenTeleportationServiceSmartContract
  */
 contract PersonalWallet {
+
+  modifier authorized () {
+    require(msg.sender == address(this) || roles[msg.sender] == Role.Master);
+    _;
+  }
 
   enum Role {Unauthorised, Master, Action, Recovery}
   mapping(address => Role) public roles;
@@ -23,19 +28,18 @@ contract PersonalWallet {
 
   function () payable public { }
 
-  //allows for gasless transactions
-  function execute( 
+  function execute(
     uint8 _v, bytes32 _r, bytes32 _s,
-    address _from, address _to, 
-    uint _value, bytes _data, 
+    address _from, address _to,
+    uint _value, bytes _data,
     address _rewardType, uint _rewardAmount) public {
 
       require(isMasterAccount(_from));
 
-      bytes32 hash = keccak256(abi.encodePacked(address(this), _from, _to, _value, _data, 
+      bytes32 hash = keccak256(abi.encodePacked(address(this), _from, _to, _value, _data,
         _rewardType, _rewardAmount, nonces[_from]++));
 
-      //make sure it was signed correctly by the user
+      //make sure it was signed correctly by the originator
       require(ecrecover(
         keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)), _v, _r, _s) == _from);
 
@@ -48,13 +52,33 @@ contract PersonalWallet {
             require((ERC20(_rewardType)).transfer(msg.sender, _rewardAmount));
           }
       }
-    
+
       //execute the transaction
       require(_to.call.value(_value)(_data));
   }
 
-  function isMasterAccount(address account) internal view returns (bool) {
+  function addMasterAccount(address account) authorized public {
+    roles[account] = Role.Master;
+  }
+
+  function addActionAccount(address account) authorized public {
+    roles[account] = Role.Master;
+  }
+
+  function removeRoleFromAccount(address account) authorized public {
+    roles[account] = Role.Unauthorised;
+  }
+
+  function canLogIn(address account) public view returns (bool) {
+    return isMasterAccount(account) || isActionAccount(account);
+  }
+
+  function isMasterAccount(address account) public view returns (bool) {
     return roles[account] == Role.Master;
+  }
+
+  function isActionAccount(address account) public view returns (bool) {
+    return roles[account] == Role.Action;
   }
 
 }
