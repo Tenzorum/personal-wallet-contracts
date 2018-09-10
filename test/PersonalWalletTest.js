@@ -7,6 +7,8 @@ let wallet;
 let token;
 let owner;
 let master1;
+let master2;
+let action1;
 let target;
 
 let oneEther = web3.toWei(1, "ether");
@@ -27,7 +29,9 @@ contract('PersonalWalletTest', (accounts) => {
     beforeEach(async () => {
         owner = accounts[0];
         master1 = accounts[1];
-        target = accounts[2];
+        master2 = accounts[2];
+        action1 = accounts[3];
+        target = accounts[4];
 
         wallet = await PersonalWallet.new(master1);
         token = await TestToken.new();
@@ -67,7 +71,7 @@ contract('PersonalWalletTest', (accounts) => {
             rewardType, rewardAmount, nonce);
         let signedHash = await web3.eth.sign(from, hash);
         let [v, r, s] = getRSV(signedHash);
-        await wallet.execute(v, r, s, from, to, value, 
+        await wallet.execute(v, r, s, from, to, value,
             data, rewardType, rewardAmount, {from: owner});
     }
 
@@ -76,7 +80,8 @@ contract('PersonalWalletTest', (accounts) => {
         let convertedAmount = pad(utils.toHex(amount).substring(2),64);
         let data = transferSignature + convertedTo + convertedAmount;
         return data;
-    } 
+    }
+
 
     it("send some ether using signing, with zero fee", async () => {
         await signAndExecute(master1, target, halfEther, '0x', etherRewardAddress, 0);
@@ -122,4 +127,20 @@ contract('PersonalWalletTest', (accounts) => {
         }
         assert(hundredTokens == (await token.balanceOf(wallet.address)).toNumber(), "contract has all the tokens");
     });
+
+    it("wallet roles work as expected", async () => {
+        assert(!(await wallet.isMasterAccount(master2)), "shouldn't be master account yet");
+        await wallet.addMasterAccount(master2, {from: master1});
+        assert(await wallet.isMasterAccount(master2), "should be master account now");
+
+        assert(!(await wallet.isActionAccount(action1)), "shouldn't be action account yet");
+        await wallet.addMasterAccount(action1, {from: master2});
+        assert(await wallet.isMasterAccount(action1), "should be action account now");
+
+        await wallet.removeAccount(master2, {from: master1});
+        assert(!(await wallet.isMasterAccount(master2)), "shouldn't be master account anymore");
+        await wallet.removeAccount(action1, {from: master1});
+        assert(!(await wallet.isActionAccount(action1)), "shouldn't be action account anymore");
+    });
+
 })

@@ -9,6 +9,7 @@ import "./ERC20.sol";
  * Inspired by:
  * IDEX: https://etherscan.io/address/0x2a0c0dbecc7e4d658f48e01e3fa353f44050c208#code
  * ERC-1077&1078: https://ethereum-magicians.org/t/erc-1077-and-erc-1078-the-magic-of-executable-signed-messages-to-login-and-do-actions/351
+ * MetaTX: https://github.com/austintgriffith/bouncer-proxy
  * BTTS: https://github.com/bokkypoobah/BokkyPooBahsTokenTeleportationServiceSmartContract
  */
 contract PersonalWallet {
@@ -65,7 +66,7 @@ contract PersonalWallet {
     roles[account] = Role.Master;
   }
 
-  function removeRoleFromAccount(address account) authorized public {
+  function removeAccount(address account) authorized public {
     roles[account] = Role.Unauthorised;
   }
 
