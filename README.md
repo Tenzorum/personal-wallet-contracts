@@ -14,10 +14,10 @@ function execute(
 
 where:
 
-_v, _r, _s - components of the signature of the message
-_from - source address that signed the message
-_to - target address if sending ether, or token contract address for token transfer
-_value - amount of ether to send
-_data - function payload like token transfer data or any other function call
-_rewardType - address(0) for ether, and token contract address for tokens payable as fee
-_rewardAmount - how much of ether/token should be paid as the fee
+* _v, _r, _s - components of the signature of the message
+* _from - source address that signed the message
+* _to - target address if sending ether, or token contract address for token transfer
+* _value - amount of ether to send
+* _data - function payload like token transfer data or any other function call
+* _rewardType - address(0) for ether, and token contract address for tokens payable as fee
+* _rewardAmount - how much of ether/token should be paid as the fee
